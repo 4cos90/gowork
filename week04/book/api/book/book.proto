@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package api.book;
+
+import "google/api/annotations.proto";
+
+option go_package = "book/api/book;book";
+option java_multiple_files = true;
+option java_package = "api.book";
+
+service Book {
+	rpc CreateBook (CreateBookRequest) returns (CreateBookReply){
+	    option (google.api.http) = {
+    	  get: "/createBook/{name}"
+    	};
+	};
+	rpc UpdateBook (UpdateBookRequest) returns (UpdateBookReply){
+        option (google.api.http) = {
+          get: "/updateBook/{name}"
+        };
+	};
+	rpc DeleteBook (DeleteBookRequest) returns (DeleteBookReply){
+        option (google.api.http) = {
+          get: "/deleteBook/{name}"
+        };
+	};
+	rpc GetBook (GetBookRequest) returns (GetBookReply){
+        option (google.api.http) = {
+          get: "/getBook/{name}"
+        };
+	};
+	rpc ListBook (ListBookRequest) returns (ListBookReply){
+        option (google.api.http) = {
+          get: "/listBook/{name}"
+        };
+	};
+}
+
+message CreateBookRequest {
+	string name = 1;
+}
+message CreateBookReply {
+	string name = 1;
+}
+
+message UpdateBookRequest {
+	string name = 1;
+}
+message UpdateBookReply {
+	string name = 1;
+}
+
+message DeleteBookRequest {
+	string name = 1;
+}
+message DeleteBookReply {
+	string name = 1;
+}
+
+message GetBookRequest {
+	string name = 1;
+}
+message GetBookReply {
+	string name = 1;
+}
+
+message ListBookRequest {
+	string name = 1;
+}
+
+message ListBookReply {
+	string name = 1;
+}
