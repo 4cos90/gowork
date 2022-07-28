@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+//1. 参考 Hystrix 实现一个滑动窗口计数器。
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	var windowSize time.Duration = 5000 * time.Millisecond //窗口大小5000毫秒
