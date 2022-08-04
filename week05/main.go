@@ -8,11 +8,11 @@ import (
 
 //1. 参考 Hystrix 实现一个滑动窗口计数器。
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	var windowSize time.Duration = 5000 * time.Millisecond //窗口大小5000毫秒
 	var windowCount int = 4                                //窗口内允许最多调用4次
 	Work := RateLimiterSlidingWindow(windowSize, windowCount, MockWorkFunc)
 	go func() {
+		rand.Seed(time.Now().UnixNano())
 		for {
 			time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
 			Work() //模拟随机的调用 预计平均5秒调用10次，成功4次。
