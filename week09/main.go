@@ -7,15 +7,17 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"main/pkg"
 	"net"
+	"strconv"
 	"time"
 )
 
 //1.总结几种 socket 粘包的解包方式：fix length/delimiter based/length field based frame decoder。尝试举例其应用。
 //2.实现一个从 socket connection 中解码出 goim 协议的解码器。
 
-var BufferSize int = 20 //fix length 约定的消息长度
-var MessageType int = 3 // 0-原生收发消息 1-fix length 2-delimiter based 3-length field based frame decoder
+var BufferSize int = 1024 //fix length 约定的消息长度
+var MessageType int = 4   // 0-原生收发消息 1-fix length 2-delimiter based 3-length field based frame decoder 4-goim协议
 var Delimiter byte = 00
 
 func main() {
@@ -39,6 +41,8 @@ func main() {
 				go handleConndelimiterbased(conn)
 			case 3:
 				go handleConnframedecoder(conn)
+			case 4:
+				go handleConngoim(conn)
 			}
 
 		}
@@ -55,6 +59,8 @@ func main() {
 				mocksenddelimiterbased()
 			case 3:
 				mocksendbaseframedecoder()
+			case 4:
+				mocksendgoim()
 			}
 		}
 	}()
@@ -137,13 +143,12 @@ func handleConnframedecoder(conn net.Conn) {
 	for {
 		peek, err := reader.Peek(4)
 		if err != nil {
-			if err != io.EOF {
-				log.Println(err.Error())
+			if err == io.EOF {
 				break
 			} else {
-				log.Println("ending.")
+				log.Printf("read error: %v\n", err)
+				break
 			}
-			break
 		}
 		buffer := bytes.NewBuffer(peek)
 		var size int32
@@ -160,7 +165,42 @@ func handleConnframedecoder(conn net.Conn) {
 		}
 		log.Printf("Receive Success by length field based frame decoder,Msg: %s\n", string(data[4:]))
 	}
+}
 
+//goim 消息处理
+func handleConngoim(conn net.Conn) {
+	defer conn.Close()
+	reader := bufio.NewReader(conn)
+	for {
+		peek, err := reader.Peek(pkg.PackageLengthSize())
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				log.Printf("read error: %v\n", err)
+				break
+			}
+		}
+		buffer := bytes.NewBuffer(peek)
+		var size int32
+		if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
+			log.Println(err)
+		}
+		if int32(reader.Buffered()) < size {
+			continue
+		}
+		data := make([]byte, size)
+		if _, err := reader.Read(data); err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		content, err := pkg.Decoder(data)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		log.Printf("Receive Success by goim,Msg: %s\n", string(content.Content))
+	}
 }
 
 //无任何处理的发送
@@ -248,26 +288,21 @@ func Encode(message string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Decode 解码消息
-func Decode(reader *bufio.Reader) (string, error) {
-	// 读取消息的长度
-	lengthByte, _ := reader.Peek(4) // 读取前4个字节的数据
-	lengthBuff := bytes.NewBuffer(lengthByte)
-	var length int32
-	err := binary.Read(lengthBuff, binary.LittleEndian, &length)
+func mocksendgoim() {
+	seq := 0
+	version := 1
+	code := 1
+	conn, err := net.Dial("tcp", "127.0.0.1:10001")
 	if err != nil {
-		return "", err
+		fmt.Println("dial failed, err\n", err)
+		return
 	}
-	// Buffered返回缓冲中现有的可读取的字节数。
-	if int32(reader.Buffered()) < length+4 {
-		return "", err
+	defer conn.Close()
+	for i := 0; i < 5; i++ {
+		msg := "Hello World" + strconv.Itoa(seq)
+		patchmsg := pkg.Encoder(pkg.NewPack(version, code, seq, []byte(msg)))
+		seq++
+		fmt.Printf("Send Success by goim,Msg:%s \n", string(patchmsg))
+		conn.Write(patchmsg)
 	}
-
-	// 读取真正的消息数据
-	pack := make([]byte, int(4+length))
-	_, err = reader.Read(pack)
-	if err != nil {
-		return "", err
-	}
-	return string(pack[4:]), nil
 }
