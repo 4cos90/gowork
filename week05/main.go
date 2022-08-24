@@ -22,7 +22,7 @@ func main() {
 }
 
 func RateLimiterSlidingWindow(windowSize time.Duration, windowCount int, workFunc func()) func() {
-	windowCache := make([]time.Time, 1)
+	windowCache := make([]time.Time, 0)
 	startindex := 0
 	return func() {
 		for i := startindex; i < len(windowCache); i++ {
@@ -32,7 +32,7 @@ func RateLimiterSlidingWindow(windowSize time.Duration, windowCount int, workFun
 			}
 		}
 		fmt.Printf("startindex-->%d\n", startindex)
-		if startindex == -1 || len(windowCache)-startindex < windowCount { //startindex == -1 代表窗口期内没有调用，同意执行
+		if len(windowCache)-startindex < windowCount {
 			workFunc()
 			windowCache = append(windowCache, time.Now())
 		} else {
