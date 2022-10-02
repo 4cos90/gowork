@@ -10,6 +10,7 @@ require (
 	github.com/go-kratos/kratos/contrib/registry/consul/v2 v2.0.0-20220223091357-d6896127b137
 	github.com/go-kratos/kratos/v2 v2.2.0
 	github.com/go-kratos/swagger-api v0.1.6
+	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-jwt/jwt v3.2.1+incompatible
